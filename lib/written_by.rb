@@ -21,6 +21,32 @@ def self.all
     written_by_array
   end
 
+  def self.get_by_author_id(author_id)
+    results = DB.exec("SELECT * from written_by WHERE author_id = #{author_id};")
+    written_by_array = []
+    results.each do |results|
+      @id = results['id'].to_i
+      @author_id = results['author_id'].to_i
+      @book_id = results['book_id'].to_i
+      written_by_array << Written_by.new({:id=>@id, :author_id=>@author_id,
+                                          :book_id=>@book_id})
+    end
+    written_by_array
+  end
+
+  def self.get_by_book_id(book_id)
+    results = DB.exec("SELECT * from written_by WHERE book_id = #{book_id};")
+    written_by_array = []
+    results.each do |results|
+      @id = results['id'].to_i
+      @author_id = results['author_id'].to_i
+      @book_id = results['book_id'].to_i
+      written_by_array << Written_by.new({:id=>@id, :author_id=>@author_id,
+                                          :book_id=>@book_id})
+    end
+    written_by_array
+  end
+
   def ==(another_written_by)
     self.author_id == another_written_by.author_id && self.book_id == another_written_by.book_id
   end
