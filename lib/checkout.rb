@@ -25,6 +25,36 @@ class Checkout
     checkouts
   end
 
+  def self.get_by_patron_id(patron_id)
+    results = DB.exec("SELECT id, patron_id, copy_id, TO_CHAR(checkout_date, 'MM/DD/YYYY') AS checkout_date_char, " +
+    									"TO_CHAR(due_date, 'MM/DD/YYYY') AS due_date_char from checkout WHERE patron_id = #{patron_id};")
+    checkouts = []
+    results.each do |results|
+      @id = results['id'].to_i
+      @patron_id = results['patron_id'].to_i
+      @copy_id = results['copy_id'].to_i
+      @checkout_date = results['checkout_date_char']
+      @due_date = results['due_date_char']
+      checkouts << Checkout.new({:id=>@id, :patron_id=>@patron_id, :copy_id=>@copy_id, :checkout_date=>@checkout_date, :due_date=>@due_date})
+    end
+    checkouts
+  end
+
+	def self.get_by_copy_id(copy_id)
+    results = DB.exec("SELECT id, patron_id, copy_id, TO_CHAR(checkout_date, 'MM/DD/YYYY') AS checkout_date_char, " +
+    									"TO_CHAR(due_date, 'MM/DD/YYYY') AS due_date_char from checkout WHERE copy_id = #{copy_id};")
+    checkouts = []
+    results.each do |results|
+      @id = results['id'].to_i
+      @patron_id = results['patron_id'].to_i
+      @copy_id = results['copy_id'].to_i
+      @checkout_date = results['checkout_date_char']
+      @due_date = results['due_date_char']
+      checkouts << Checkout.new({:id=>@id, :patron_id=>@patron_id, :copy_id=>@copy_id, :checkout_date=>@checkout_date, :due_date=>@due_date})
+    end
+    checkouts
+  end
+
 	def ==(another_checkout)
     self.copy_id == another_checkout.copy_id && self.patron_id == another_checkout.patron_id
   end
