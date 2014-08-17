@@ -121,7 +121,6 @@ def add_book_to_catalog
 		elsif Book.get_by_isbn_10(new_isbn_10).empty?
 			new_book = Book.new({:title=>new_title, :isbn_10=>new_isbn_10})
 			new_book.save
-			p new_book
 			puts "\nEnter the number of book authors"
 			number_authors = gets.chomp.to_i
 			for author_count in (1..number_authors)
@@ -131,34 +130,61 @@ def add_book_to_catalog
 					new_author = Author.new({:name=>new_author_name})
 					new_author.save
 					new_author_id = new_author.id
-					p new_author
 				else
 					new_author_id = Author.get_by_name(new_author_name).first.id
 				end
 				new_written_by = Written_by.new({:author_id=>new_author_id, :book_id=>new_book.id})
 				new_written_by.save
-				p new_written_by
 			end
 			puts "\nEnter the number of copies of the new book"
 			number_copies = gets.chomp.to_i
 			for copy_count in (1..number_copies)
 				new_copy = Copy.new({:book_id=>new_book.id})
 				new_copy.save
-				p new_copy
 			end
-			puts "\n#{number_copies} copies of #{new_title} have been added to the catalog\n"
+			puts "\n#{number_copies} copies of '#{new_title}' have been added to the catalog\n"
 		else
 			puts "\nISBN-10 #{new_isbn_10} is already in the database; please update the number of copies instead\n"
 		end
 	else
-		puts "\n#{new_title} is already in the database; please update the number of copies instead\n"
+		puts "\n'#{new_title}' is already in the database; please update the number of copies instead\n"
 	end
 end
 
 def find_book_by_title
+	puts "\nEnter the title of the book you want to find"
+	the_title = gets.chomp
+	the_book_array = Book.get_by_title(the_title)
+	if the_book_array.empty?
+		puts "\n#{the_title} is not in the catalog\n"
+	else
+		the_book = the_book_array.first
+		number_of_copies = the_book.count_copies
+		puts "\nThere are #{number_of_copies} copies of '#{the_book.title}' (ISBN-10 #{the_book.isbn_10}) in the library"
+		author_array = the_book.find_authors
+		author_array.each_with_index do |author, index|
+			puts "  Author #{index+1}. #{author}"
+		end
+		puts "\n"
+	end
 end
 
 def find_book_by_ISBN
+	puts "\nEnter the ISBN-10 of the book you want to find"
+	the_isbn_10 = gets.chomp
+	the_book_array = Book.get_by_isbn_10(the_isbn_10)
+	if the_book_array.empty?
+		puts "\nISBN-10 #{the_isbn_10} is not in the catalog\n"
+	else
+		the_book = the_book_array.first
+		number_of_copies = the_book.count_copies
+		puts "\nThere are #{number_of_copies} copies of '#{the_book.title}' (ISBN-10 #{the_book.isbn_10}) in the library"
+		author_array = the_book.find_authors
+		author_array.each_with_index do |author, index|
+			puts "  Author #{index+1}. #{author}"
+		end
+		puts "\n"
+	end
 end
 
 def list_all_books

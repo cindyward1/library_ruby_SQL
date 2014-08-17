@@ -78,4 +78,22 @@ class Book
     DB.exec("DELETE FROM book WHERE id = #{self.id}")
   end
 
+  def count_copies
+  	result = DB.exec("SELECT COUNT(copies.book_id) AS number_of_copies FROM copy copies WHERE book_id = #{self.id};")
+  	number_of_copies = result.first['number_of_copies']
+  	number_of_copies
+  end
+
+  def find_authors
+  	results = DB.exec("SELECT author.* FROM book JOIN written_by ON (written_by.book_id = book.id) " +
+                      "JOIN author ON (author.id = written_by.author_id) WHERE book.id = #{self.id} " +
+                      "ORDER BY author.name;")
+    author_name_array = []
+    results.each do |author|
+    	author_name = author['name']
+    	author_name_array << author_name
+    end
+    author_name_array
+  end
+
 end
