@@ -66,4 +66,17 @@ class Book
     @id = book.first['id'].to_i
   end
 
+  def update_title(title)
+    DB.exec("UPDATE book SET title = '#{title}' WHERE id = #{self.id};")
+  end
+
+  def update_isbn_10(isbn_10)
+    DB.exec("UPDATE book SET isbn_10 = '#{isbn_10}' WHERE id = #{self.id};")
+  end
+
+  def delete
+    DB.exec("DELETE FROM book WHERE id = #{self.id}")
+  end
+
+
 end

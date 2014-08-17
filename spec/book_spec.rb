@@ -25,4 +25,22 @@ describe Book do
     expect(test_book).to eq test_book2
   end
 
+  it "is updated with a new title or a new 10-digit ISBN number" do
+    test_book = Book.new({:title=>"The Iceman Came", :isbn_10=>"0300117443", :id=>1})
+    test_book.save
+    test_book1 = Book.get_by_title("The Iceman Came").first
+    test_book1.update_title("The Iceman Cometh")
+    expect(Book.get_by_title("The Iceman Came")).to eq []
+    test_book2 = Book.get_by_isbn_10("0300117443").first
+    test_book.update_isbn_10("0300117434")
+    expect(Book.get_by_isbn_10("0300117443")).to eq []
+  end
+
+  it "is deleted from the database" do
+    test_book = Book.new({:title=>"The Iceman Came", :isbn_10=>"0300117443", :id=>1})
+    test_book.save
+    test_book.delete
+    expect(Book.all).to eq []
+  end
+
 end
