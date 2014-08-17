@@ -80,7 +80,7 @@ class Book
 
   def count_copies
   	result = DB.exec("SELECT COUNT(copies.book_id) AS number_of_copies FROM copy copies WHERE book_id = #{self.id};")
-  	number_of_copies = result.first['number_of_copies']
+  	number_of_copies = result.first['number_of_copies'].to_i
   	number_of_copies
   end
 

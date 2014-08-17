@@ -35,8 +35,8 @@ def choose_user
 	puts "\n\n"
 	user_type = nil
 	while user_type != 'X'
-		puts "\nPlease enter 'L' if you are a librarian or 'P' if you are a patron."
-		puts "You may enter 'X' to exit the program or 'M' to return to this menu."
+		puts "\nPlease enter 'L' if you are a librarian or 'P' if you are a patron"
+		puts "You may enter 'X' to exit the program or 'M' to return to this menu"
 		user_type = gets.chomp.upcase
 		if user_type == "L"
 			librarian_menu
@@ -45,7 +45,7 @@ def choose_user
 		elsif user_type == "X"
 			exit_program
 		elsif user_type != "M"
-			puts "\nInvalid option entered, please try again."
+			puts "\nInvalid option entered, please try again"
 		end
 	end
 end
@@ -67,7 +67,7 @@ def librarian_menu
 		elsif option == "x"
 			exit_program
 		elsif option != "m"
-			puts "Invalid option entered, please try again."
+			puts "Invalid option entered, please try again"
 		end
 	end
 end
@@ -105,7 +105,7 @@ def books_menu
 		elsif option == "x"
 			exit_program
 		elsif option != "m"
-			puts "\nInvalid option, please try again."
+			puts "\nInvalid option, please try again"
 		end
 	end
 end
@@ -117,7 +117,7 @@ def add_book_to_catalog
 	if Book.get_by_title(new_title).empty?
 		new_isbn_10 = gets.chomp
 		if new_isbn_10 !~ /\d\d\d\d\d\d\d\d\d\d/
-			puts "\nInvalid format for ISBN-10, please try again."
+			puts "\nInvalid format for ISBN-10, please try again"
 		elsif Book.get_by_isbn_10(new_isbn_10).empty?
 			new_book = Book.new({:title=>new_title, :isbn_10=>new_isbn_10})
 			new_book.save
@@ -197,6 +197,51 @@ def list_all_books
 end
 
 def update_number_copies
+	puts "\nEnter the title or ISBN-10 number of the book of which you want to update the number of copies"
+	update_element = gets.chomp
+	if update_element =~ /\d\d\d\d\d\d\d\d\d\d/
+		the_book_array = Book.get_by_isbn_10(update_element)
+	else
+		the_book_array = Book.get_by_title(update_element)
+	end
+	if the_book_array.length > 0
+		the_book = the_book_array.first
+		number_copies = the_book.count_copies
+		puts "\n"
+		puts "\nThere are currently #{number_copies} copies of '#{the_book.title}'"
+		puts "Enter the change in the number of copies (enter a negative number to subtract copies)"
+		number_change = gets.chomp.to_i
+		if number_change > 0
+			for copy_count in (1..number_change)
+				new_copy = Copy.new({:book_id=>the_book.id})
+				new_copy.save
+			end
+			puts "\n#{number_change} copies of '#{the_book.title}' were added"
+		elsif number_change < 0
+			if number_change.abs > number_copies
+				puts "\nNo copies of '#{the_book.title}' were deleted"
+				puts "The requested number of copies to delete was more than the total"
+			else 
+				for copy_count in (1..number_change.abs)
+					the_copy_array = Copy.get_by_book_id(the_book.id)
+					if the_copy_array.empty?
+						puts "\nOnly copies that aren't checked out can be deleted"
+						puts "There were only #{copy_count-1} copies of '#{the_book.title} that were not checked out"
+					else
+						the_copy = the_copy_array.first
+						the_copy.delete
+					end
+				end
+				puts "#{number_change.abs} copies of '#{the_book.title}' were deleted"
+			end
+		else
+			puts "\nNo copies of '#{the_book.title}' were deleted because the requested number of copies to delete was 0"
+		end
+		number_of_copies = the_book.count_copies
+		puts "There are now #{number_of_copies} copies of '#{the_book.title}'"
+	else
+		puts "There are no copies of #{update_element} to delete"
+	end
 end
 
 def update_book_information
