@@ -117,4 +117,12 @@ class Copy
     @id = copy.first['id'].to_i
   end
 
+  def check_out(checkout_id)
+    DB.exec("UPDATE copy SET checkout_id = '#{checkout_id}' WHERE id = #{self.id};")
+  end
+
+  def check_in
+    DB.exec("UPDATE copy SET checkout_id = 0 WHERE id = #{self.id};")
+  end
+
 end
