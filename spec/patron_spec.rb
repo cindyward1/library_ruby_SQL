@@ -9,4 +9,10 @@ describe Patron do
     expect(test_patron.name).to eq "Cindy Ward"
   end
 
+  it "is saved to the database" do
+    test_patron = Patron.new({:name=>"Cindy Ward", :id=>1})
+    test_patron.save
+    expect(Patron.all).to eq [test_patron]
+  end
+
 end
