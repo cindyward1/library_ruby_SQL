@@ -76,4 +76,13 @@ describe Copy do
     expect(available_copy2).to eq [available_copy]
   end
 
+  it "is deleted from the database" do
+    test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
+    test_book.save
+    test_copy = Copy.new({:id=>1, :book_id=>test_book.id, :checkout_id=>0})
+    test_copy.save
+    test_copy.delete
+    expect(Copy.all).to eq []
+  end
+
 end

@@ -125,4 +125,8 @@ class Copy
     DB.exec("UPDATE copy SET checkout_id = 0 WHERE id = #{self.id};")
   end
 
+	def delete
+    DB.exec("DELETE FROM copy WHERE id = #{self.id}")
+  end
+  
 end
