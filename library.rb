@@ -188,6 +188,12 @@ def find_book_by_ISBN
 end
 
 def list_all_books
+	puts "\nCindy's Library Book Catalog\n\n"
+	Book.all.each_with_index do |the_book, index|
+		number_of_copies = the_book.count_copies
+		puts "#{index+1}. #{the_book.title} (#{number_of_copies} copies)"
+	end
+	puts "\n"
 end
 
 def update_number_copies
