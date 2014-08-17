@@ -43,4 +43,36 @@ describe Book do
     expect(Book.all).to eq []
   end
 
+  it "can count the number of copies of a book" do
+  	test_book = Book.new({:title=>"Book Title 1", :isbn_10=>"0000000001", :id=>1})
+  	test_book.save
+  	test_copy1 = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
+  	test_copy1.save
+  	test_copy2 = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
+  	test_copy2.save  	
+  	test_copy3 = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
+  	test_copy3.save  	
+  	test_copy4 = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
+  	test_copy4.save  	
+  	test_copy5 = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
+  	test_copy5.save
+  	expect(test_book.count_copies).to eq 5
+  end
+
+  it "can find all of the authors of a book" do
+  	test_book = Book.new({:title=>"Book Title 1", :isbn_10=>"0000000001", :id=>1})
+  	test_book.save
+  	test_author1 = Author.new({:name=>"Grumpy"})
+  	test_author1.save
+  	test_written_by1 = Written_by.new({:book_id=>test_book.id, :author_id=>test_author1.id})
+  	test_written_by1.save
+  	test_author2 = Author.new({:name=>"Sleepy"})
+  	test_author2.save
+  	test_written_by2 = Written_by.new({:book_id=>test_book.id, :author_id=>test_author2.id})
+  	test_written_by2.save
+  	author_array = test_book.find_authors
+  	expect(author_array.length).to eq 2
+  	expect(author_array).to eq [test_author1, test_author2]
+  end
+
 end
