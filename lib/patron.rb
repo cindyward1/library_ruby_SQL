@@ -66,4 +66,16 @@ def self.all
     @id = patron.first['id'].to_i
   end
 
+  def update_name(name)
+    DB.exec("UPDATE patron SET name = '#{name}' WHERE id = #{self.id};")
+  end
+
+  def update_phone_number(phone_number)
+    DB.exec("UPDATE patron SET phone_number = '#{phone_number}' WHERE id = #{self.id};")
+  end
+
+  def delete
+    DB.exec("DELETE FROM patron WHERE id = #{self.id}")
+  end
+
 end
