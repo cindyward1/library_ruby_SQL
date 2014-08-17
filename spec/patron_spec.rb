@@ -7,12 +7,24 @@ describe Patron do
     expect(test_patron).to be_an_instance_of Patron
     expect(test_patron.id).to eq 1
     expect(test_patron.name).to eq "Cindy Ward"
+    expect(test_patron.phone_number).to eq "503-555-1212"
   end
 
   it "is saved to the database" do
-    test_patron = Patron.new({:name=>"Cindy Ward", :id=>1})
+  	test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
     test_patron.save
     expect(Patron.all).to eq [test_patron]
+  end
+
+  it "is retrieved from the database" do
+    test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
+    test_patron.save
+    test_patron1 = Patron.get_by_name("Cindy Ward").first
+    expect(test_patron).to eq test_patron1
+    test_patron2 = Patron.get_by_id(test_patron.id).first
+    expect(test_patron).to eq test_patron2
+    test_patron3 = Patron.get_by_phone_number("503-555-1212").first
+    expect(test_patron).to eq test_patron3
   end
 
 end
