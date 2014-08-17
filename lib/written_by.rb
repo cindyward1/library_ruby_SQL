@@ -57,4 +57,9 @@ def self.all
     @id = written_by.first['id'].to_i
   end
 
+
+	def delete
+    DB.exec("DELETE FROM written_by WHERE id = #{self.id}")
+  end
+
 end
