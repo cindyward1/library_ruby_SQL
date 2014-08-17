@@ -60,3 +60,6 @@ This Ruby application implements a character user interface to a library applica
 2. Determine how many copies of a book are available to be checked out.
 3. See a history of all books that he/she has checked out in the past.
 4. Determine when a checked-out book is due.
+
+##Thanks:
+My thanks to Chris of [chris.com](http://chris.com) for the ASCII art I used in my application.

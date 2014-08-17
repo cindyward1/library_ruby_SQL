@@ -5,7 +5,7 @@ class Copy
   def initialize(attributes)
     @id = attributes[:id]
     @book_id = attributes[:book_id]
-    @checkout_id = attributes[:checkout_id]
+    @checkout_id = 0
   end
 
   def self.all
