@@ -49,4 +49,12 @@ class Author
     @id = author.first['id'].to_i
   end
 
+  def update_name(name)
+    DB.exec("UPDATE author SET name = '#{name}' WHERE id = #{self.id};")
+  end
+
+  def delete
+    DB.exec("DELETE FROM author WHERE id = #{self.id}")
+  end
+
 end
