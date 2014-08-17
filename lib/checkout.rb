@@ -66,4 +66,8 @@ class Checkout
     @id = copy.first['id'].to_i
   end
 
+  def delete
+    DB.exec("DELETE FROM checkout WHERE id = #{self.id}")
+  end
+
 end
