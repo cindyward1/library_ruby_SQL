@@ -16,4 +16,13 @@ describe Book do
     expect(Book.all).to eq [test_book]
   end
 
+  it "is retrieved from the database" do
+    test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
+    test_book.save
+    test_book1 = Book.get_by_title("The Iceman Cometh").first
+    expect(test_book).to eq test_book1
+    test_book2 = Book.get_by_id(test_book.id).first
+    expect(test_book).to eq test_book2
+  end
+
 end
