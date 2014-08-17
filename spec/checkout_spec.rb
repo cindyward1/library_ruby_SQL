@@ -32,7 +32,7 @@ describe Checkout do
     expect(Checkout.all).to eq [test_checkout]
   end
 
-  it "is retrieved from the database by patron_id" do
+  it "is retrieved from the database by patron id" do
     test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
     test_patron.save
     test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
@@ -46,7 +46,7 @@ describe Checkout do
     expect(test_checkout).to eq test_checkout1.first
   end
 
-  it "is retrieved from the database by checkout_id" do
+  it "is retrieved from the database by copy id" do
     test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
     test_patron.save
     test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})

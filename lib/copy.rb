@@ -5,7 +5,7 @@ class Copy
   def initialize(attributes)
     @id = attributes[:id]
     @book_id = attributes[:book_id]
-    @checkout_id = 0
+    @checkout_id = attributes[:checkout_id]
   end
 
   def self.all
@@ -44,15 +44,14 @@ class Copy
     copies
   end
 
-  def self.get_by_book_id(book_id) # find a book that's not checked out
-    results = DB.exec("SELECT * from copy WHERE book_id = #{book_id} and checkout_id = 0;")
+  def self.get_by_book_id(book_id)
+    results = DB.exec("SELECT * from copy WHERE book_id = #{book_id};")
     copies = []
     results.each do |results|
       @id = results['id'].to_i
       @checkout_id = results['checkout_id'].to_i
       @book_id = results['book_id'].to_i
-      copies << Copy.new({:id=>@id, :checkout_id=>@checkout_id,
-                                          :book_id=>@book_id})
+      copies << Copy.new({:id=>@id, :checkout_id=>@checkout_id, :book_id=>@book_id})
     end
     copies
   end
@@ -88,21 +87,19 @@ class Copy
       @id = results['id'].to_i
       @checkout_id = results['checkout_id'].to_i
       @book_id = results['book_id'].to_i
-      copies << Copy.new({:id=>@id, :checkout_id=>@checkout_id,
-                                          :book_id=>@book_id})
+      copies << Copy.new({:id=>@id, :checkout_id=>@checkout_id, :book_id=>@book_id})
     end
     copies
   end
 
-	def self.get_by_checkout_id(checkout_id)
-    results = DB.exec("SELECT * from copy WHERE checkout_id = #{checkout_id};")
+	def self.get_by_book_id(book_id)
+    results = DB.exec("SELECT * from copy WHERE book_id = #{book_id};")
     copies = []
     results.each do |results|
       @id = results['id'].to_i
       @checkout_id = results['checkout_id'].to_i
       @book_id = results['book_id'].to_i
-      copies << Copy.new({:id=>@id, :checkout_id=>@checkout_id,
-                                          :book_id=>@book_id})
+      copies << Copy.new({:id=>@id, :checkout_id=>@checkout_id, :book_id=>@book_id})
     end
     copies
   end

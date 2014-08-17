@@ -88,12 +88,13 @@ class Book
   	results = DB.exec("SELECT author.* FROM book JOIN written_by ON (written_by.book_id = book.id) " +
                       "JOIN author ON (author.id = written_by.author_id) WHERE book.id = #{self.id} " +
                       "ORDER BY author.name;")
-    author_name_array = []
+    author_array = []
     results.each do |author|
+      author_id = author['id']
     	author_name = author['name']
-    	author_name_array << author_name
+    	author_array << Author.new(:id=>author_id, :name=>author_name)
     end
-    author_name_array
+    author_array
   end
 
 end

@@ -2,7 +2,7 @@ require "spec_helper"
 
 describe Copy do
 
-  it "is initialized with a book but no checkout" do
+  it "is initialized with a book id but no checkout id" do
     test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
     test_book.save
     test_copy = Copy.new({:id=>1, :book_id=>test_book.id, :checkout_id=>0})
@@ -30,12 +30,18 @@ describe Copy do
   end
 
 	it "is retrieved from the database by checkout_id" do
-    test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
+  	test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
     test_book.save
-    test_copy = Copy.new({:id=>1, :book_id=>test_book.id, :checkout_id=>5})
+    test_copy = Copy.new({:id=>1, :book_id=>test_book.id, :checkout_id=>0})
     test_copy.save
-    test_copy1 = Copy.get_by_checkout_id(5).first
-    expect(test_copy).to eq test_copy1
+    test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
+    test_patron.save
+    test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
+                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
+    test_checkout.save
+    test_copy.check_out(test_checkout.id)
+    test_copy1 = Copy.get_by_checkout_id(test_checkout.id).first
+    expect(test_copy1.checkout_id).to eq test_checkout.id
   end
 
   it "is checked out by updating the checkout id to the id of a checkout entry" do
@@ -50,7 +56,7 @@ describe Copy do
 		test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
                                   :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
     available_copy.check_out(test_checkout.id)
-    checked_out_copy = Copy.get_by_id(available_copy.id).first
+    checked_out_copy = Copy.get_by_checkout_id(test_checkout.id).first
     expect(checked_out_copy.checkout_id).to eq 1
     available_copy1 = Copy.get_by_book_id_not_checked_out(test_book.id)
     expect(available_copy1).to eq []
@@ -68,7 +74,7 @@ describe Copy do
     test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
                                   :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
     available_copy.check_out(test_checkout.id)
-    checked_out_copy = Copy.get_by_id(available_copy.id).first
+    checked_out_copy = Copy.get_by_checkout_id(test_checkout.id).first
     expect(checked_out_copy.checkout_id).to eq 1
     available_copy1 = Copy.get_by_book_id_not_checked_out(test_book.id)
     expect(available_copy1).to eq []
