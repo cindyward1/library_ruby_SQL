@@ -12,4 +12,12 @@ describe Copy do
     expect(test_copy.checkout_id).to eq 0
   end
 
+  it "is saved to the database" do
+    test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
+    test_book.save
+    test_copy = Copy.new({:id=>1, :book_id=>test_book.id, :checkout_id=>0})
+    test_copy.save
+    expect(Copy.all).to eq [test_copy]
+  end
+
 end
