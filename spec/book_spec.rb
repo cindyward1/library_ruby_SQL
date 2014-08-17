@@ -10,4 +10,10 @@ describe Book do
     expect(test_book.isbn_10).to eq "0300117434"
   end
 
+  it "is saved to the database" do
+    test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
+    test_book.save
+    expect(Book.all).to eq [test_book]
+  end
+
 end
