@@ -1,4 +1,5 @@
 require "pg"
+require "date"
 require "./lib/book.rb"
 require "./lib/copy.rb"
 require "./lib/author.rb"
@@ -631,6 +632,39 @@ def patron_menu
 end
 
 def checkout_book
+	puts "\nEnter your name"
+	the_patron_name = gets.chomp
+	the_patron_array = Patron.get_by_name(the_patron_name)
+	if the_patron_array.length > 0
+		the_patron = the_patron_array.first
+		puts "\nEnter the book title to check out"
+		checkout_title = gets.chomp
+		the_book_array = Book.get_by_title(checkout_title)
+		if the_book_array.length > 0
+			the_book = the_book_array.first
+			the_copy_array = Copy.get_by_book_id_not_checked_out(the_book.id)
+			if the_copy_array.length > 0
+				the_copy = the_copy_array.first
+				today = Date.today
+				checkout_date_formatted = today.month.to_s + "/" + today.day.to_s + "/" + today.year.to_s
+				due_date = today + 30
+				due_date_formatted = due_date.month.to_s + "/" + due_date.day.to_s + "/" + due_date.year.to_s
+				checkin_date = "00/00/0000"
+				the_checkout = Checkout.new({:patron_id=>the_patron.id, :copy_id=>the_copy.id, :checkout_date=>checkout_date_formatted, 
+																		 :due_date=>due_date_formatted, :checkin_date=>checkin_date})
+				the_checkout.save
+				the_copy.check_out(the_checkout.id)
+				puts "\nYou have checked out '#{the_book.title}' copy #{the_copy.id} on #{checkout_date_formatted}, " +
+							"due back on #{due_date_formatted}"
+			else
+				puts "\nThere is no copy of '#{the_book.title}' available to check out"
+			end
+		else
+				puts "\nThe book '#{checkout_title}' is not in the catalog"
+		end
+	else
+		puts "\nYour name #{the_patron_name} is not in the patron database so you are not permitted to check out books"
+	end
 end
 
 def checkin_book

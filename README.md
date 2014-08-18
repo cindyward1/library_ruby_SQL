@@ -43,7 +43,7 @@
   * # CREATE TABLE patron (id serial PRIMARY KEY, name varchar, phone_number varchar);
   * # CREATE TABLE copy (id serial PRIMARY KEY, book_id int, checkout_id int);
   * # CREATE TABLE written_by (id serial PRIMARY KEY, author_id int, book_id int);
-  * # CREATE TABLE checkout (id serial PRIMARY KEY, patron_id int, copy_id int, checkout_date timestamp, due_date timestamp);
+  * # CREATE TABLE checkout (id serial PRIMARY KEY, patron_id int, copy_id int, checkout_date timestamp, checkin_date timestamp, due_date timestamp);
 * To run the application, cd to (clone location)/library_ruby_SQL and enter the following at a terminal application prompt $: ruby library.rb
 * You can also test a non-interactive version of the method against its test cases found in (your working directory)/library_ruby_SQL/spec/*.rb using [rspec](https://rubygems.org/gems/rspec). Please use version 3.1.1. To run rspec, cd to (clone location)/library_ruby_SQL and enter the following string at a terminal application $: "rspec" (This command will automatically execute any .rb file it finds in ./spec/.)
 * Please note that this repository has only been tested with [Google Chrome browser](http://www.google.com/intl/en/chrome/browser) version 36.0.1985.125 on an iMac running [Apple](http://www.apple.com) OS X version 10.9.4 (Mavericks). Execution on any other computing platform, browser or operating system is at the user's risk.
