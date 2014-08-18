@@ -37,7 +37,8 @@ describe Copy do
     test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
     test_patron.save
     test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
-                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
+                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014",
+                                  :checkin_date=>"00/00/0000"})
     test_checkout.save
     test_copy.check_out(test_checkout.id)
     test_copy1 = Copy.get_by_checkout_id(test_checkout.id).first
@@ -54,7 +55,8 @@ describe Copy do
     available_copy = Copy.get_by_book_id_not_checked_out(test_book.id).first
     expect(available_copy.checkout_id).to eq 0
 		test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
-                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
+                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014",
+                                  :checkin_date=>"00/00/0000"})
     available_copy.check_out(test_checkout.id)
     checked_out_copy = Copy.get_by_checkout_id(test_checkout.id).first
     expect(checked_out_copy.checkout_id).to eq 1
@@ -72,7 +74,8 @@ describe Copy do
     available_copy = Copy.get_by_book_id_not_checked_out(test_book.id).first
     expect(available_copy.checkout_id).to eq 0
     test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
-                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
+                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014",
+                                  :checkin_date=>"00/00/0000"})
     available_copy.check_out(test_checkout.id)
     checked_out_copy = Copy.get_by_checkout_id(test_checkout.id).first
     expect(checked_out_copy.checkout_id).to eq 1

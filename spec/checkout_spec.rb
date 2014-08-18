@@ -68,7 +68,8 @@ describe Checkout do
     test_copy = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
     test_copy.save
     test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
-                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
+                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014",
+                                  :checkin_date=>"00/00/0000"})
     test_checkout.save
     test_checkout.delete
     expect(Checkout.all).to eq []
@@ -82,7 +83,8 @@ describe Checkout do
     test_copy = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
     test_copy.save
     test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
-                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
+                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014",
+                                  :checkin_date=>"00/00/0000"})
     test_checkout.save
     test_checkout1 = Checkout.get_overdue("09/01/2014")
     expect(test_checkout1).to eq []

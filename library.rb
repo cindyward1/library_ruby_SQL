@@ -90,7 +90,6 @@ def books_menu
 		puts "  c = update the number of copies of a book"
 		puts "  u = update book information"
 		puts "  d = delete a book from the catalog"
-		puts "  o = find all overdue books"
 		option = gets.chomp.downcase
 		if option == "a"
 			add_book_to_catalog
@@ -101,7 +100,7 @@ def books_menu
 		elsif option == "l"
 			list_all_books
 		elsif option == "c"
-			update_number_copies (nil)
+			update_number_copies(nil)
 		elsif option == "u"
 			update_book_information
 		elsif option == "d"
@@ -176,7 +175,7 @@ def add_author_and_written_by(new_book_id)
 end
 
 def find_book_by_title
-	puts "\nEnter the title of the book you want to find"
+	puts "\nEnter the title of the book to find"
 	the_title = gets.chomp
 	the_book_array = Book.get_by_title(the_title)
 	if the_book_array.empty?
@@ -187,13 +186,17 @@ def find_book_by_title
 end
 
 def find_book_by_ISBN
-	puts "\nEnter the ISBN-10 of the book you want to find"
+	puts "\nEnter the ISBN-10 of the book to find"
 	the_isbn_10 = gets.chomp
-	the_book_array = Book.get_by_isbn_10(the_isbn_10)
-	if the_book_array.empty?
-		puts "\nISBN-10 #{the_isbn_10} is not in the catalog\n"
+	if the_isbn_10 !~ /\d\d\d\d\d\d\d\d\d\d/
+		puts "\nInvalid format for ISBN-10, try again"
 	else
-		display_author_names(the_book_array.first)
+		the_book_array = Book.get_by_isbn_10(the_isbn_10)
+		if the_book_array.empty?
+			puts "\nISBN-10 #{the_isbn_10} is not in the catalog\n"
+		else
+			display_author_names(the_book_array.first)
+		end
 	end
 end
 
@@ -454,9 +457,192 @@ end
 
 
 def patron_maint_menu
+option = nil
+	while option != "m" && option != "x" && option != "b"
+		puts "\nPATRON MENU for LIBRARIAN"
+		puts "Menu options:"
+		puts "  b = go back to librarian menu"
+		puts "  x = exit the program"
+		puts "  a = add a patron to the database"
+		puts "  f = find a patron by name"
+		puts "  i = find a patron by phone number"
+		puts "  l = list all patrons in the database"
+		puts "  n = update a patron's name"
+		puts "  u = update a patron's phone number"
+		puts "  d = delete a patron from the database"
+		puts "  p = find a patron's overdue books"
+		puts "  o = find all patron's overdue books"
+		option = gets.chomp.downcase
+		if option == "a"
+			add_patron_to_database
+		elsif option == "f"
+			find_patron_by_name
+		elsif option == "i"
+			find_patron_by_phone_number
+		elsif option == "l"
+			list_all_patrons
+		elsif option == "n"
+			update_patron_name
+		elsif option == "u"
+			update_patron_phone_number
+		elsif option == "d"
+			delete_patron
+		elsif option == "p"
+			find_patron_overdue_books
+		elsif option == "o"
+			find_all_patrons_overdue_books
+		elsif option == "x"
+			exit_program
+		elsif option != "b"
+			puts "\nInvalid option, try again"
+		end
+	end
 end
 
+def add_patron_to_database
+	puts "\nEnter the name of the new patron"
+	new_name = gets.chomp
+	new_patron_array = Patron.get_by_name(new_name)
+	if new_patron_array.empty?
+		puts "Enter the patron's phone number"
+		new_phone = gets.chomp
+		if new_phone !~ /\d\d\d-\d\d\d-\d\d\d\d/
+			puts "\nInvalid format for phone number, try again"
+		else
+			new_patron = Patron.new({:name=>new_name, :phone_number=>new_phone})
+			new_patron.save
+			puts "\nPatron #{new_name}, phone number #{new_phone}, has been added to the database\n"
+		end
+	else
+		new_patron = new_patron_array.first
+		puts "\nPatron #{new_patron.name}, phone number #{new_patron.phone_number}, is already in the database"
+	end
+end
+
+def find_patron_by_name
+	puts "\nEnter the name of the patron to find"
+	the_name = gets.chomp
+	the_patron_array = Patron.get_by_name(the_name)
+	if the_patron_array.empty?
+		puts "\nPatron #{the_name} is not in the patron database\n"
+	else
+		the_patron = the_patron_array.first
+		puts "\nPatron #{the_patron.name} is at phone number #{the_patron.phone_number}"
+	end
+	the_patron_array
+end
+
+def find_patron_by_phone_number
+	puts "\nEnter the phone number of the patron to find"
+	the_phone = gets.chomp
+	the_patron_array = Patron.get_by_phone_number(the_phone)
+	if the_phone !~ /\d\d\d-\d\d\d-\d\d\d\d/
+		puts "\nInvalid format for phone number, try again"
+	elsif the_patron_array.empty?
+		puts "\nPhone number #{the_phone} is not in the patron database\n"
+	else
+		puts "\nThe list of patrons with phone number #{the_phone}\n"
+		the_patron_array.each_with_index do |the_patron, patron_index|
+			puts "#{patron_index+1}. #{the_patron.name}\n"
+		end
+		return the_patron_array
+	end
+end
+
+def list_all_patrons
+	puts "\nCindy's Library Patron Database\n\n"
+	the_database = Patron.all
+	if the_database.empty?
+		puts "There are no patrons in the database"
+	else
+		the_database.each_with_index do |the_patron, index|
+			number_checkouts = the_patron.count_checkouts
+			number_overdue = the_patron.count_overdue
+			puts "#{index+1}. #{the_patron.name} (phone number #{the_patron.phone_number})"
+			puts "            Number of books currently checked out: #{number_checkouts}"
+			puts "            Number of books overdue: #{number_overdue}\n"
+		end
+	end
+	puts "\n"
+end
+
+def update_patron_name
+	the_patron_array = find_patron_by_name
+	the_patron = the_patron_array.first
+	puts "\nEnter the new name for #{the_patron.name} (phone number #{the_patron.phone_number})"
+	new_name = gets.chomp
+	the_patron.update_name(new_name)
+	puts "\nThe patron's name has been changed to #{new_name}"
+end
+
+def update_patron_phone_number
+	the_patron_array = find_patron_by_phone_number
+	puts "\nSelect the index of the patron's phone number to change"
+	the_patron_index = gets.chomp.to_i
+	the_patron = the_patron_array[the_patron_index-1]
+	puts "\nEnter the new phone number for the patron"
+	new_phone = gets.chomp
+	if new_phone !~ /\d\d\d-\d\d\d-\d\d\d\d/
+		puts "\nInvalid format for phone number, try again"
+		the_patron.update_phone_number(new_phone)		
+		puts "\nThe phone number of patron #{the_patron.name} has been changed to #{new_phone}"
+	end
+end
+
+def delete_patron
+end
+
+def find_patron_overdue_books
+end
+
+def find_all_patrons_overdue_books
+end
+
+
 def patron_menu
+	option = nil
+	while option != "m" && option != "x"
+		puts "\nPATRON MENU\n"
+		puts "Menu options:"
+		puts "  m = go back to the main menu"
+		puts "  x = exit the program"
+		puts "  o = check out a book"
+		puts "  n = check in a book"
+		puts "  c = check number of available copies of a book"
+		puts "  h = see checkout history"
+		puts "  b = check the due date of a book"
+		option = gets.chomp.downcase
+		if option == "o"
+			checkout_book
+		elsif option == "n"
+			checkin_book
+		elsif option == "c"
+			available_copies_book
+		elsif option == "h"
+			checkout_history
+		elsif option == "d"
+			check_due_date_book
+		elsif option == "x"
+			exit_program
+		elsif option != "m"
+			puts "Invalid option entered, try again"
+		end
+	end
+end
+
+def checkout_book
+end
+
+def checkin_book
+end
+
+def available_copies_book
+end
+
+def checkout_history
+end
+
+def check_due_date_book
 end
 
 def exit_program

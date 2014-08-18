@@ -78,4 +78,12 @@ def self.all
     DB.exec("DELETE FROM patron WHERE id = #{self.id}")
   end
 
+  def count_checkouts
+  	return 0
+  end
+
+  def count_overdue
+  	return 0
+  end
+
 end
