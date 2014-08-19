@@ -84,6 +84,7 @@ def books_menu
 		puts "Menu options:"
 		puts "  b = go back to librarian menu"
 		puts "  x = exit the program"
+		puts "  n = check in a book"
 		puts "  a = add a book to the catalog"
 		puts "  f = find a book by title"
 		puts "  i = find a book by ISBN-10 number"
@@ -92,7 +93,9 @@ def books_menu
 		puts "  u = update book information"
 		puts "  d = delete a book from the catalog"
 		option = gets.chomp.downcase
-		if option == "a"
+		if option == "n"
+			checkin_book
+		elsif option == "a"
 			add_book_to_catalog
 		elsif option == "f"
 			find_book_by_title
@@ -114,8 +117,60 @@ def books_menu
 	end
 end
 
+def checkin_book
+	puts "\nCHECK IN A RETURNED BOOK"
+	puts "Enter the book title or ISBN-10"
+	checkin_info = gets.chomp
+	if checkin_info !~ /\d\d\d\d\d\d\d\d\d\d/
+		the_book_array = Book.get_by_title(checkin_info)
+	else
+		the_book_array = Book.get_by_isbn_10(checkin_info)
+	end
+	if the_book_array.empty?
+		puts "\nThere is no book in the catalog with the information #{checkin_info}"
+	else
+		the_book = the_book_array.first
+		puts "Enter the name of the patron checking in the book"
+		patron_name = gets.chomp
+		the_patron_array = Patron.get_by_name(patron_name)
+		if the_patron_array.empty?
+			puts "\nThere is no patron #{patron_name} in the database"
+		else
+			the_patron = the_patron_array.first
+			copy_checkout_hash_array = the_book.find_copy_checkout_from_patron_book(the_patron.id)
+			if copy_checkout_hash_array.length == 1
+				copy_id = copy_checkout_hash_array.first['copy_id']
+				the_copy_array = Copy.get_by_id(copy_id)
+			elsif copy_checkout_hash_array.length > 1
+				puts "\nThe patron #{the_patron.name} has multiple copies of #{the_book.name} checked out"
+				puts "Please provide the unique copy number of the book being checked in"
+				copy_input_id = gets.chomp.to_i
+				the_copy_array = Copy.get_by_id(copy_input_id)
+				copy_id = the_copy.id
+				if the_copy_array.empty?
+					puts "\nCopy number #{copy_input_id} was not found for book #{the_book.name}"
+					copy_id = 0
+				end
+			elsif copy_checkout_hash_array.length = 0
+				puts "\nInternal error: checkout #{the_checkout.id} of book #{the_book.name} for patron #{the_patron.name} has no corresponding copy"
+				copy_id = 0
+			end
+			if copy_id != 0
+				the_copy = the_copy_array.first
+				the_checkout = Checkout.get_by_id(the_copy.checkout_id).first
+				the_copy.check_in
+				today = Date.today
+				today_char = today.month.to_s + "/" + today.day.to_s + "/" + today.year.to_s
+				the_checkout.check_in(today_char)
+				puts "\nThe book #{the_book.title} checked out by patron #{the_patron.name} has been checked in"
+			end
+		end
+	end
+end
+
 def add_book_to_catalog
-	puts "\nEnter the title of the new book"
+	puts "\nADD BOOK TO CATALOG"
+	puts "Enter the title of the new book"
 	new_title = gets.chomp
 	new_book_array = Book.get_by_title(new_title)
 	if new_book_array.empty?
@@ -205,8 +260,12 @@ def display_author_names(the_book)
 	number_of_copies = the_book.count_copies
 	puts "\nThere are #{number_of_copies} copies of '#{the_book.title}' (ISBN-10 #{the_book.isbn_10}) in the library"
 	author_array = the_book.find_authors
-	author_array.each_with_index do |author, index|
-		puts "  Author #{index+1}. #{author.name}"
+	if author_array.empty?
+		puts "No authors listed for this book"
+	else
+		author_array.each_with_index do |author, index|
+			puts "  Author #{index+1}. #{author.name}"
+		end
 	end
 	puts "\n"
 end
@@ -319,9 +378,9 @@ def update_book_information
 		puts "Menu options:"
 		puts "  b = go back to the librarian's books menu"
 		puts "  x = exit program"
-		puts "  t = change title"
-		puts "  i = change ISBN-10"
-		puts "  a = change author information"
+		puts "  t = update title"
+		puts "  i = update ISBN-10"
+		puts "  a = update author information"
 		option = gets.chomp
 		if option == "t"
 			puts "\nEnter the new title for '#{the_book.title}' (ISBN-10 #{the_book.isbn_10})"
@@ -340,7 +399,7 @@ def update_book_information
 		elsif option == "a"
 			author_array = the_book.find_authors
 			if author_array.length > 0
-				puts "\nThe authors for '#{the_book.title}' (ISBN-10 #{the_book.isbn_10}) are"
+				puts "\nThe author(s) for '#{the_book.title}' (ISBN-10 #{the_book.isbn_10}) are"
 				author_array.each_with_index do |author, index|
 					puts "  Author #{index+1}. #{author.name}"
 				end
@@ -373,33 +432,9 @@ def update_author_menu(the_book, author_array)
 		word_hash = {"u"=>"change","d"=>"delete"}
 		puts "\nSelect the index of the author whose name to #{word_hash.fetch(option)}"
 		author_index = gets.chomp.to_i
-		p author_array
 		author = author_array[author_index-1]
-		puts "**** update_author_menu"
-		p author
 		if option == "u" && author_index > 0
-			puts "\nEnter the new name for the author"
-			new_author_name = gets.chomp
-			new_author_array = Author.get_by_name(new_author_name)
-			if new_author_array.empty?
-				new_autnor = Author.new(:author_name=>new_author_name)
-				new_author.save
-			else
-				new_author = new_author_array.first
-			end
-			written_by_array = Written_by.get_by_author_id(new_author.id)
-			if !written_by_array.empty?
-				book_found = false
-				written_by_array.each do |written_by|
-					if written_by.book_id == the_book.id
-						found = true
-					end
-				end
-			end
-			if !book_found || written_by_array.empty?
-				new_written_by = Written_by.new(:book_id=>the_book.id, :author_id=>new_author.id)
-				puts "\nThe new author name for '#{the_book.title}' is #{new_author.name}"
-			end
+			add_author_and_written_by(the_book.id)
 		end
 		if author_index > 0
 			written_by_array = Written_by.get_by_author_id(author.id)
@@ -608,7 +643,6 @@ def patron_menu
 		puts "  m = go back to the main menu"
 		puts "  x = exit the program"
 		puts "  o = check out a book"
-		puts "  n = check in a book"
 		puts "  c = check number of available copies of a book"
 		puts "  h = see checkout history"
 		puts "  b = check the due date of a book"
@@ -632,6 +666,7 @@ def patron_menu
 end
 
 def checkout_book
+	puts "\nCHECK OUT A BOOK\n"
 	puts "\nEnter your name"
 	the_patron_name = gets.chomp
 	the_patron_array = Patron.get_by_name(the_patron_name)
@@ -665,9 +700,6 @@ def checkout_book
 	else
 		puts "\nYour name #{the_patron_name} is not in the patron database so you are not permitted to check out books"
 	end
-end
-
-def checkin_book
 end
 
 def available_copies_book

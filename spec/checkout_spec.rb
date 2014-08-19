@@ -32,6 +32,20 @@ describe Checkout do
     expect(Checkout.all).to eq [test_checkout]
   end
 
+  it "is retrieved from the database by its id" do
+    test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
+    test_patron.save
+    test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
+    test_book.save
+    test_copy = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
+    test_copy.save
+    test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
+                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014"})
+    test_checkout.save
+    test_checkout1 = Checkout.get_by_id(test_checkout.id)
+    expect(test_checkout).to eq test_checkout1.first
+  end
+
   it "is retrieved from the database by patron id" do
     test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
     test_patron.save
@@ -90,6 +104,22 @@ describe Checkout do
     expect(test_checkout1).to eq []
     test_checkout2 = Checkout.get_overdue("09/30/2014")
     expect(test_checkout2.first).to eq test_checkout
+  end
+
+  it "checks in a book by updating its check-in date" do
+    test_patron = Patron.new({:name=>"Cindy Ward", :id=>1, :phone_number=>"503-555-1212"})
+    test_patron.save
+    test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
+    test_book.save
+    test_copy = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
+    test_copy.save
+    test_checkout = Checkout.new({:id=>1, :patron_id=>test_patron.id, :copy_id=>test_copy.id,
+                                  :checkout_date=>"08/16/2014", :due_date=>"09/15/2014",
+                                  :checkin_date=>"00/00/0000"})
+    test_checkout.save
+    test_checkout.check_in("08/19/2014")
+    test_checkout1 = Checkout.get_by_id(test_checkout.id)
+    expect(test_checkout1.first.checkin_date).to eq "08/19/2014"
   end
 
 end

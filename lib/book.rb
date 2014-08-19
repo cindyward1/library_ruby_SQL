@@ -97,4 +97,18 @@ class Book
     author_array
   end
 
+  def find_copy_checkout_from_patron_book(patron_id)
+    results = DB.exec("SELECT checkout.copy_id, copy.checkout_id FROM patron JOIN checkout ON (checkout.patron_id = patron.id) " +
+                      "JOIN copy ON (copy.checkout_id = checkout.id) JOIN book ON (copy.book_id = book.id) " +
+                      "WHERE book.id = #{self.id} and patron.id = #{patron_id};")
+    checkout_copy_hash_array = []
+    results.each do |result|
+      checkout_copy = Hash.new
+      checkout_copy['copy_id'] = result['copy_id'].to_i
+      checkout_copy['checkout_id'] = result['checkout_id'].to_i
+      checkout_copy_hash_array << checkout_copy
+    end
+    checkout_copy_hash_array
+  end
+      
 end

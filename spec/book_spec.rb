@@ -75,4 +75,20 @@ describe Book do
   	expect(author_array).to eq [test_author1, test_author2]
   end
 
+  it "can find the copy and checkout ids from its ID and the patron's ID" do
+    test_patron = Patron.new({:name=>"Cindy Ward", :phone_number=>'503-555-1212'})
+    test_patron.save
+    test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434"})
+    test_book.save
+    test_copy = Copy.new({:book_id=>test_book.id, :checkout_id=>0})
+    test_copy.save
+    test_checkout = Checkout.new(:patron_id=>test_patron.id, :copy_id=>test_copy.id)
+    test_checkout.save
+    test_copy.check_out(test_checkout.id)
+    test_hash_array = test_book.find_copy_checkout_from_patron_book(test_patron.id)
+    test_hash = test_hash_array.first
+    expect(test_hash['copy_id']).to eq test_copy.id
+    expect(test_hash['checkout_id']).to eq test_checkout.id
+  end
+
 end
