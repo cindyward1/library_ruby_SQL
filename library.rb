@@ -450,16 +450,20 @@ def update_author_menu(the_book, author_array)
 		word_hash = {"u"=>"change","d"=>"delete"}
 		puts "\nSelect the index of the author whose name to #{word_hash.fetch(option)}"
 		author_index = gets.chomp.to_i
-		author = author_array[author_index-1]
-		if option == "u" && author_index > 0
-			add_author_and_written_by(the_book.id)
-		end
-		if author_index > 0
-			written_by_array = Written_by.get_by_author_id(author.id)
-			written_by_array.each do |written_by|
-				written_by.delete
+		if author_index <= 0 || author_index > author_array.length
+			puts "\nInvalid index selected, try again"
+		else
+			author = author_array[author_index-1]
+			if option == "u" && author_index > 0
+				add_author_and_written_by(the_book.id)
 			end
-			puts "\nAuthor #{author.name} has been deleted from the authorship of '#{the_book.title}'"
+			if author_index > 0
+				written_by_array = Written_by.get_by_author_id(author.id)
+				written_by_array.each do |written_by|
+					written_by.delete
+				end
+				puts "\nAuthor #{author.name} has been deleted from the authorship of '#{the_book.title}'"
+			end
 		end
 	elsif option == "x"
 			exit_program
@@ -522,7 +526,7 @@ option = ""
 		puts "  u = update a patron's phone number"
 		puts "  d = delete a patron from the database"
 		puts "  p = find a patron's overdue books"
-		puts "  o = find all patron's overdue books"
+		puts "  o = find all patrons' overdue books"
 		option = gets.chomp.downcase
 		if option == "a"
 			add_patron_to_database
@@ -630,13 +634,18 @@ def update_patron_phone_number
 	the_patron_array = find_patron_by_phone_number
 	puts "\nSelect the index of the patron's phone number to change"
 	the_patron_index = gets.chomp.to_i
-	the_patron = the_patron_array[the_patron_index-1]
-	puts "\nEnter the new phone number for the patron"
-	new_phone = gets.chomp
-	if new_phone !~ /\d\d\d-\d\d\d-\d\d\d\d/
-		puts "\nInvalid format for phone number, try again"
-		the_patron.update_phone_number(new_phone)		
-		puts "\nThe phone number of patron #{the_patron.name} has been changed to #{new_phone}"
+	if the_patron_index <= 0 || the_patron_index > the_patron_array.length
+		puts "\nInvalid index, try again"
+	else
+		the_patron = the_patron_array[the_patron_index-1]
+		puts "\nEnter the new phone number for the patron"
+		new_phone = gets.chomp
+		if new_phone !~ /\d\d\d-\d\d\d-\d\d\d\d/
+			puts "\nInvalid format for phone number, try again"
+		else
+			the_patron.update_phone_number(new_phone)		
+			puts "\nThe phone number of patron #{the_patron.name} has been changed to #{new_phone}"
+		end
 	end
 end
 
@@ -675,6 +684,14 @@ def find_patron_overdue_books
 end
 
 def find_all_patrons_overdue_books
+	# today_date = "10/31/2014"
+	# puts "\nThe list of Cindy's Library patrons with overdue books as of #{today_date}\n"
+	# naughty_patron_array = Checkout.get_overdue(today_date)
+	# naughty_patron_array.each do |checkout|
+	# 	if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
+	# 		puts "#{checkout.patron_id} #{checkout.due_date} #{checkout.checkout_date}"
+	# 	end
+	# end
 end
 
 
@@ -788,13 +805,9 @@ def check_due_date_book
 	if !the_book_array.empty?
 		the_book = the_book_array.first
 		copy_checkout_hash_array = the_book.find_copy_checkout_from_patron_book(@current_patron.id)
-		puts "!!! line 754"
-		p copy_checkout_hash_array
 		copy_checkout_hash_array.each do |copy_checkout|
 			checkout_id = copy_checkout['checkout_id']
 			the_checkout_array = Checkout.get_by_id(checkout_id)
-			puts "@@@ line 759"
-			p the_checkout_array
 			if !the_checkout_array.empty?
 				the_checkout = the_checkout_array.first
 				if the_checkout.checkin_date == "00/00/0000" || the_checkout.checkin_date == "01/01/0001"
