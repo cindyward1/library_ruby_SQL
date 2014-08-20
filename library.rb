@@ -52,7 +52,7 @@ def choose_user
 		elsif user_type == "X"
 			exit_program
 		elsif user_type != "M"
-			puts "\nInvalid option entered, try again"
+			puts "\nInvalid option, try again"
 		end
 	end
 end
@@ -74,7 +74,7 @@ def librarian_menu
 		elsif option == "x"
 			exit_program
 		elsif option != "m"
-			puts "Invalid option entered, try again"
+			puts "Invalid option, try again"
 		end
 	end
 end
@@ -348,6 +348,10 @@ def update_number_copies(the_book_array)
 						puts "There #{plural_verb} only #{copy_count-1} #{plural} of '#{the_book.title}' that #{plural_verb} not checked out"
 					else
 						the_copy = the_copy_array.first
+						the_checkout_array = Checkout.get_by_copy_id(the_copy.id)
+						the_checkout_array.each do |checkout|
+							checkout.delete
+						end
 						the_copy.delete
 						copies_actually_deleted += 1
 					end
@@ -460,7 +464,7 @@ def update_author_menu(the_book, author_array)
 	elsif option == "x"
 			exit_program
 	elsif option != "b"
-		puts "\nInvalid option entered, try again"
+		puts "\nInvalid option, try again"
 	end
 end
 
@@ -468,7 +472,8 @@ def delete_book
 	the_book_array = get_book_array_by_title_or_isbn_10
 	if !the_book_array.empty?
 		the_book = the_book_array.first
-		puts "\nThis operation cannot be undone!! Enter 'y' or 'yes' to delete"
+		puts "\nDeleting a book will remove all of its checkout history"
+		puts "This operation cannot be undone! Enter 'y' or 'yes' to delete"
 		puts "Enter 'x' to exit the program or 'b' to go back to the librarian's books menu"
 		option = gets.chomp.slice(0,1).downcase
 		if option == "y"
@@ -480,6 +485,10 @@ def delete_book
 				puts "\nThere are no copies of '#{the_book.title}' to delete"
 			else
 				copies_array_available.each do |copy|
+					the_checkout_array = Checkout.get_by_copy_id(copy.id)
+					the_checkout_array.each do |checkout|
+						checkout.delete
+					end
 					copy.delete;
 				end
 				written_by_array = Written_by.get_by_book_id(the_book.id)
@@ -632,6 +641,34 @@ def update_patron_phone_number
 end
 
 def delete_patron
+	the_patron_array = find_patron_by_name
+	the_patron = the_patron_array.first
+	puts "\nPatron #{the_patron.name} and all of their checkout history will be deleted"
+	puts "\nThis operation cannot be undone!! Enter 'y' or 'yes' to delete"
+	puts "Enter 'x' to exit the program or 'p' to go back to the librarian's patron menu"
+	option = gets.chomp.slice(0,1).downcase
+	if option == "y"
+		checkout_array = Checkout.get_by_patron_id(the_patron.id)
+		has_checkouts = false
+		checkout_array.each do |checkout|
+			if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
+				has_checkouts = true
+			end
+		end
+		if has_checkouts
+			puts "Patron #{the_patron.name} currently has books checked out and cannot be deleted"
+		else
+			checkout_array.each do |checkout|
+				checkout.delete
+			end
+			puts "\nPatron #{the_patron.name} has been deleted"
+			the_patron.delete
+		end
+	elsif option == "x"
+		exit_program
+	elsif option != "p"
+		puts "Invalid option, try again"
+	end
 end
 
 def find_patron_overdue_books
@@ -672,7 +709,7 @@ def patron_menu
 			elsif option == "x"
 				exit_program
 			elsif option != "m"
-				puts "Invalid option entered, try again"
+				puts "Invalid option, try again"
 			end
 		end
 	else
