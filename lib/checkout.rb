@@ -50,7 +50,8 @@ class Checkout
   def self.get_by_patron_id(patron_id)
     results = DB.exec("SELECT id, patron_id, copy_id, TO_CHAR(checkout_date, 'MM/DD/YYYY') AS checkout_date_char, " +
                       "TO_CHAR(checkin_date, 'MM/DD/YYYY') as checkin_date_char, " +
-                      "TO_CHAR(due_date, 'MM/DD/YYYY') AS due_date_char from checkout WHERE patron_id = #{patron_id};")
+                      "TO_CHAR(due_date, 'MM/DD/YYYY') AS due_date_char from checkout WHERE patron_id = #{patron_id} " +
+                      "ORDER BY checkin_date_char, checkout_date_char, due_date_char;")
     checkouts = []
     results.each do |results|
       @id = results['id'].to_i
@@ -59,7 +60,8 @@ class Checkout
       @checkout_date = results['checkout_date_char']
       @checkin_date = results['checkin_date_char']
       @due_date = results['due_date_char']
-      checkouts << Checkout.new({:id=>@id, :patron_id=>@patron_id, :copy_id=>@copy_id, :checkout_date=>@checkout_date, :checkin_date=>@checkin_date, :due_date=>@due_date})
+      checkouts << Checkout.new({:id=>@id, :patron_id=>@patron_id, :copy_id=>@copy_id, :checkout_date=>@checkout_date, 
+                                 :checkin_date=>@checkin_date, :due_date=>@due_date})
     end
     checkouts
   end

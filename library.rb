@@ -8,6 +8,7 @@ require "./lib/checkout.rb"
 require "./lib/patron.rb"
 
 DB = PG.connect(:dbname => "cindys_library")
+@current_patron = nil
 
 def choose_user
 	puts "\n"
@@ -35,6 +36,7 @@ def choose_user
 	puts "              ||_______________________________________________________||"
 	puts "\n\n"
 	user_type = ""
+	@current_patron = nil
 	while user_type != 'X'
 		puts "\nMAIN MENU"
 		puts "Menu options:"
@@ -135,17 +137,17 @@ def checkin_book
 				copy_id = copy_checkout_hash_array.first['copy_id']
 				the_copy_array = Copy.get_by_id(copy_id)
 			elsif copy_checkout_hash_array.length > 1
-				puts "\nThe patron #{the_patron.name} has multiple copies of #{the_book.name} checked out"
+				puts "\nThe patron #{the_patron.name} has multiple copies of #{the_book.title} checked out"
 				puts "Please provide the unique copy number of the book being checked in"
 				copy_input_id = gets.chomp.to_i
 				the_copy_array = Copy.get_by_id(copy_input_id)
 				copy_id = the_copy.id
 				if the_copy_array.empty?
-					puts "\nCopy number #{copy_input_id} was not found for book #{the_book.name}"
+					puts "\nCopy number #{copy_input_id} was not found for book #{the_book.title}"
 					copy_id = 0
 				end
 			elsif copy_checkout_hash_array.length = 0
-				puts "\nInternal error: checkout #{the_checkout.id} of book #{the_book.name} for patron #{the_patron.name} has no corresponding copy"
+				puts "\nInternal error: checkout #{the_checkout.id} of book #{the_book.title} for patron #{the_patron.name} has no corresponding copy"
 				copy_id = 0
 			end
 			if copy_id != 0
@@ -640,69 +642,71 @@ end
 
 
 def patron_menu
-	option = ""
-	while option != "m" && option != "x"
-		puts "\nPATRON MENU\n"
-		puts "Menu options:"
-		puts "  m = go back to the main menu"
-		puts "  x = exit the program"
-		puts "  o = check out a book"
-		puts "  c = check number of available copies of a book"
-		puts "  h = see checkout history"
-		puts "  b = check the due date of a book"
-		option = gets.chomp.downcase
-		if option == "o"
-			checkout_book
-		elsif option == "n"
-			checkin_book
-		elsif option == "c"
-			available_copies_book
-		elsif option == "h"
-			checkout_history
-		elsif option == "d"
-			check_due_date_book
-		elsif option == "x"
-			exit_program
-		elsif option != "m"
-			puts "Invalid option entered, try again"
+	puts "\n\nPlease enter your name"
+	patron_name = gets.chomp
+	the_patron_array = Patron.get_by_name(patron_name)
+	if !the_patron_array.empty?			
+		@current_patron = the_patron_array.first
+		puts "\nWelcome to Cindy's Library, #{@current_patron.name}"
+		option = ""
+		while option != "m" && option != "x"
+			puts "\nPATRON MENU"
+			puts "Menu options:"
+			puts "  m = go back to the main menu"
+			puts "  x = exit the program"
+			puts "  o = check out a book"
+			puts "  c = check number of available copies of a book"
+			puts "  h = see checkout history"
+			puts "  d = check the due date of a book\n\n"
+			option = gets.chomp.downcase
+			if option == "o"
+				checkout_book
+			elsif option == "n"
+				checkin_book
+			elsif option == "c"
+				available_copies_book
+			elsif option == "h"
+				checkout_history
+			elsif option == "d"
+				check_due_date_book
+			elsif option == "x"
+				exit_program
+			elsif option != "m"
+				puts "Invalid option entered, try again"
+			end
 		end
+	else
+		puts "\nYour name #{patron_name} is not in the patron database"
+		puts "Please talk to the librarian about your privileges at Cindy's Library!"
 	end
 end
 
 def checkout_book
 	puts "\nCHECK OUT A BOOK\n"
-	puts "\nEnter your name"
-	the_patron_name = gets.chomp
-	the_patron_array = Patron.get_by_name(the_patron_name)
-	if the_patron_array.length > 0
-		the_patron = the_patron_array.first
-		puts "\nEnter the book title to check out"
-		checkout_title = gets.chomp
-		the_book_array = Book.get_by_title(checkout_title)
-		if the_book_array.length > 0
-			the_book = the_book_array.first
-			the_copy_array = Copy.get_by_book_id_not_checked_out(the_book.id)
-			if the_copy_array.length > 0
-				the_copy = the_copy_array.first
-				today = Date.today
-				checkout_date_formatted = today.month.to_s + "/" + today.day.to_s + "/" + today.year.to_s
-				due_date = today + 30
-				due_date_formatted = due_date.month.to_s + "/" + due_date.day.to_s + "/" + due_date.year.to_s
-				checkin_date = "00/00/0000"
-				the_checkout = Checkout.new({:patron_id=>the_patron.id, :copy_id=>the_copy.id, :checkout_date=>checkout_date_formatted, 
-																		 :due_date=>due_date_formatted, :checkin_date=>checkin_date})
-				the_checkout.save
-				the_copy.check_out(the_checkout.id)
-				puts "\nYou have checked out '#{the_book.title}' copy #{the_copy.id} on #{checkout_date_formatted}, " +
-							"due back on #{due_date_formatted}"
-			else
-				puts "\nThere is no copy of '#{the_book.title}' available to check out"
-			end
+	puts "#{@current_patron.name}, enter the book title to check out"
+	checkout_title = gets.chomp
+	the_book_array = Book.get_by_title(checkout_title)
+	if !the_book_array.empty?
+		the_book = the_book_array.first
+		the_copy_array = Copy.get_by_book_id_not_checked_out(the_book.id)
+		if !the_copy_array.empty?
+			the_copy = the_copy_array.first
+			today = Date.today
+			checkout_date_formatted = today.month.to_s + "/" + today.day.to_s + "/" + today.year.to_s
+			due_date = today + 30
+			due_date_formatted = due_date.month.to_s + "/" + due_date.day.to_s + "/" + due_date.year.to_s
+			checkin_date = "00/00/0000"
+			the_checkout = Checkout.new({:patron_id=>@current_patron.id, :copy_id=>the_copy.id, :checkout_date=>checkout_date_formatted, 
+																	 :due_date=>due_date_formatted, :checkin_date=>checkin_date})
+			the_checkout.save
+			the_copy.check_out(the_checkout.id)
+			puts "\nYou checked out '#{the_book.title}' on #{checkout_date_formatted}, " +
+						"due back on #{due_date_formatted}"
 		else
-				puts "\nThe book '#{checkout_title}' is not in the catalog"
+			puts "\nThere is no copy of '#{the_book.title}' available to check out"
 		end
 	else
-		puts "\nYour name #{the_patron_name} is not in the patron database so you are not permitted to check out books"
+			puts "\nThe book '#{checkout_title}' is not in the catalog"
 	end
 end
 
@@ -719,14 +723,53 @@ def available_copies_book
 			plural = "copy"
 			plural_verb = "is"
 		end 
-		puts "\nThere #{plural_verb} #{number_available_copies} #{plural} of #{the_book.title} available for checkout\n"
+		puts "\n#{@current_patron.name}, there #{plural_verb} #{number_available_copies} #{plural} of #{the_book.title} available for checkout\n"
 	end
 end
 
 def checkout_history
+	puts "\nCHECKOUT HISTORY FOR #{@current_patron.name}\n\n"
+	checked_out_array = Checkout.get_by_patron_id(@current_patron.id)
+	checked_out_array.each_with_index do |checkout, index|
+		the_book = Book.get_from_checkout(checkout.id).first
+		if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
+			checkout_string = "Checked out"
+			due_date_string = "Due date: #{checkout.due_date}"
+		else
+			checkout_string = checkout.checkin_date + " "
+			due_date_string = ""
+		end
+		puts "#{index+1}. #{the_book.title} (ISBN-10 #{the_book.isbn_10})"
+		puts "   Checked in on: #{checkout_string}   Checked out on: #{checkout.checkout_date}   #{due_date_string}\n\n"
+	end
+	puts "\n"
 end
 
 def check_due_date_book
+	puts "\nCHECK THE DUE DATE OF A BOOK"
+	the_book_array = get_book_array_by_title_or_isbn_10
+	if !the_book_array.empty?
+		the_book = the_book_array.first
+		copy_checkout_hash_array = the_book.find_copy_checkout_from_patron_book(@current_patron.id)
+		puts "!!! line 754"
+		p copy_checkout_hash_array
+		copy_checkout_hash_array.each do |copy_checkout|
+			checkout_id = copy_checkout['checkout_id']
+			the_checkout_array = Checkout.get_by_id(checkout_id)
+			puts "@@@ line 759"
+			p the_checkout_array
+			if !the_checkout_array.empty?
+				the_checkout = the_checkout_array.first
+				if the_checkout.checkin_date == "00/00/0000" || the_checkout.checkin_date == "01/01/0001"
+					puts "\n#{@current_patron.name}, #{the_book.title} is due on #{the_checkout.due_date}"
+				else
+					puts "\n#{@current_patron.name}, you do not have #{the_book.title} currently checked out"
+				end
+			else
+				puts "\n#{@current_patron.name}, you do not have #{the_book.title} currently checked out"
+			end
+		end
+	end
 end
 
 def exit_program

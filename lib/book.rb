@@ -56,6 +56,19 @@ class Book
     books
   end
 
+  def self.get_from_checkout(the_checkout_id)
+    results = DB.exec("SELECT book.* FROM checkout JOIN copy ON (checkout.copy_id = copy.id) " +
+                      "JOIN book ON (copy.book_id = book.id) WHERE checkout.id = #{the_checkout_id};")
+    books = []
+    results.each do |results|
+      @id = results['id'].to_i
+      @title = results['title']
+      @isbn_10 = results['isbn_10']
+      books << Book.new({:id=>@id, :title=>@title, :isbn_10=>@isbn_10})
+    end
+    books
+  end
+
   def ==(another_book)
     self.title == another_book.title && self.isbn_10 == another_book.isbn_10
   end
