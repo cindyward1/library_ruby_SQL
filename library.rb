@@ -34,7 +34,7 @@ def choose_user
 	puts "              ||-------------------------------------------------------||"
 	puts "              ||_______________________________________________________||"
 	puts "\n\n"
-	user_type = nil
+	user_type = ""
 	while user_type != 'X'
 		puts "\nMAIN MENU"
 		puts "Menu options:"
@@ -56,7 +56,7 @@ def choose_user
 end
 
 def librarian_menu
-	option = nil
+	option = ""
 	while option != "m" && option != "x"
 		puts "\nLIBRARIAN MENU\n"
 		puts "Menu options:"
@@ -78,7 +78,7 @@ def librarian_menu
 end
 
 def books_menu
-	option = nil
+	option = ""
 	while option != "m" && option != "x" && option != "b"
 		puts "\nBOOKS MENU for LIBRARIAN"
 		puts "Menu options:"
@@ -104,7 +104,8 @@ def books_menu
 		elsif option == "l"
 			list_all_books
 		elsif option == "c"
-			update_number_copies(nil)
+			the_book_array = []
+			update_number_copies(the_book_array)
 		elsif option == "u"
 			update_book_information
 		elsif option == "d"
@@ -119,16 +120,8 @@ end
 
 def checkin_book
 	puts "\nCHECK IN A RETURNED BOOK"
-	puts "Enter the book title or ISBN-10"
-	checkin_info = gets.chomp
-	if checkin_info !~ /\d\d\d\d\d\d\d\d\d\d/
-		the_book_array = Book.get_by_title(checkin_info)
-	else
-		the_book_array = Book.get_by_isbn_10(checkin_info)
-	end
-	if the_book_array.empty?
-		puts "\nThere is no book in the catalog with the information #{checkin_info}"
-	else
+	the_book_array = get_book_array_by_title_or_isbn_10
+	if !the_book_array.empty?
 		the_book = the_book_array.first
 		puts "Enter the name of the patron checking in the book"
 		patron_name = gets.chomp
@@ -168,6 +161,20 @@ def checkin_book
 	end
 end
 
+def get_book_array_by_title_or_isbn_10
+	puts "Enter the book title or ISBN-10"
+	input_info = gets.chomp
+	if input_info !~ /\d\d\d\d\d\d\d\d\d\d/
+		the_book_array = Book.get_by_title(input_info)
+	else
+		the_book_array = Book.get_by_isbn_10(input_info)
+	end
+	if the_book_array.empty?
+		puts "\nThere is no book in the catalog with the information #{input_info}"
+	end
+	the_book_array
+end
+
 def add_book_to_catalog
 	puts "\nADD BOOK TO CATALOG"
 	puts "Enter the title of the new book"
@@ -203,13 +210,15 @@ def add_book_to_catalog
 				puts "\n#{number_copies} #{plural} of '#{new_book.title}' (ISBN-10 #{new_book.isbn_10}) #{plural_verb} added to the catalog\n"
 			else
 				new_book = new_book_array.first
-				puts "\n'#{new_book.title}' (ISBN-10 #{new_book.isbn_10}) is already in the database; update the number of copies instead\n"
+				puts "\n'#{new_book.title}' (ISBN-10 #{new_book.isbn_10}) is already in the database"
+				puts "Updating the number of copies instead\n"
 				update_number_copies(new_book_array)
 			end
 		end
 	else
 		new_book = new_book_array.first
-		puts "\n'#{new_book.title}' (ISBN-10 #{new_book.isbn_10}) is already in the database; update the number of copies instead\n"
+		puts "\n'#{new_book.title}' (ISBN-10 #{new_book.isbn_10}) is already in the database"
+		puts "Updating the number of copies instead\n"
 		update_number_copies(new_book_array)
 	end
 end
@@ -224,10 +233,15 @@ def add_author_and_written_by(new_book_id)
 		new_author = Author.get_by_name(new_author_name).first
 	end
 	new_author_id = new_author.id
-	new_written_by = Written_by.new({:author_id=>new_author_id, :book_id=>new_book_id})
-	new_written_by.save
+	new_written_by = Written_by.get_by_book_and_author_ids(new_book_id, new_author_id)
 	new_book = Book.get_by_id(new_book_id).first
-	puts "\nAuthor #{new_author_name} has been added to the authorship of '#{new_book.title}'"
+	if new_written_by.empty?
+		new_written_by = Written_by.new({:author_id=>new_author_id, :book_id=>new_book_id})
+		new_written_by.save
+		puts "\nAuthor #{new_author_name} has been added to the authorship of '#{new_book.title}'"
+	else
+		puts "\nAuthor #{new_author_name} was already listed as an author of #{new_book.title}"
+	end
 end
 
 def find_book_by_title
@@ -285,16 +299,10 @@ def list_all_books
 end
 
 def update_number_copies(the_book_array)
-	if the_book_array == nil
-		puts "\nEnter the title or ISBN-10 number of the book of which to update the number of copies"
-		update_element = gets.chomp
-		if update_element =~ /\d\d\d\d\d\d\d\d\d\d/
-			the_book_array = Book.get_by_isbn_10(update_element)
-		else
-			the_book_array = Book.get_by_title(update_element)
-		end
+	if the_book_array.empty?
+		the_book_array = get_book_array_by_title_or_isbn_10
 	end
-	if the_book_array.length > 0
+	if !the_book_array.empty?
 		the_book = the_book_array.first
 		number_copies = the_book.count_copies
 		plural = "copies"
@@ -305,7 +313,7 @@ def update_number_copies(the_book_array)
 		end
 		puts "\n"
 		puts "\nThere #{plural_verb} currently #{number_copies} #{plural} of '#{the_book.title}'"
-		puts "Enter the requested change in the number of copies (enter a negative number to subtract copies)"
+		puts "Enter the number of copies to add (enter a negative number to subtract copies)"
 		number_change = gets.chomp.to_i
 		if number_change > 0
 			for copy_count in (1..number_change)
@@ -323,57 +331,63 @@ def update_number_copies(the_book_array)
 			if number_change.abs > number_copies
 				puts "\nNo copies of '#{the_book.title}' were deleted"
 				puts "The requested number of copies to delete was more than the total"
-			else 
+			else
+				copies_actually_deleted = 0
 				for copy_count in (1..number_change.abs)
-					the_copy_array = Copy.get_by_book_id(the_book.id)
+					the_copy_array = Copy.get_by_book_id_not_checked_out(the_book.id)
 					if the_copy_array.empty?
-						plural = copies
-						plural_verb = were
+						plural = "copies"
+						plural_verb = "were"
 						if copy_count-1 == 1
 							plural = "copy"
 							plural_verb = "was"
 						end
 						puts "\nOnly book copies that aren't checked out can be deleted"
-						puts "There #{plural_verb} only #{copy_count-1} #{plural} of '#{the_book.title} that #{plural_verb} not checked out"
+						puts "There #{plural_verb} only #{copy_count-1} #{plural} of '#{the_book.title}' that #{plural_verb} not checked out"
 					else
 						the_copy = the_copy_array.first
 						the_copy.delete
+						copies_actually_deleted += 1
 					end
 				end
 				plural = "copies"
 				plural_verb = "were"
-				if number_change.abs == 1
+				if copies_actually_deleted == 1
 					plural = "copy"
 					plural_verb = "was"
 				end
-				puts "\n#{number_change.abs} #{plural} of '#{the_book.title}' #{plural_verb} deleted"
+				puts "\n#{copies_actually_deleted} #{plural} of '#{the_book.title}' #{plural_verb} deleted"
+				check_copy_array = Copy.get_by_book_id(the_book.id)
+				if check_copy_array.empty?
+					written_by_array = Written_by.get_by_book_id(the_book.id)
+					written_by_array.each do |written_by|
+						written_by.delete
+					end
+					the_book.delete
+					puts "\n'#{the_book.title}' (ISBN-10 #{the_book.isbn_10}) was deleted"
+				end
 			end
 		else
-			puts "\nNo copies of '#{the_book.title}' were deleted because the requested number of copies to delete was 0"
+			puts "\nNo copies of '#{the_book.title}' were deleted; requested number of copies to delete was 0"
 		end
 		number_copies = the_book.count_copies
-		plural = "copies"
-		plural_verb = "are"
-		if number_copies == 1
-			plural = "copy"
-			plural_verb = "is"
-		end 
-		puts "There #{plural_verb} now #{number_copies} #{plural} of '#{the_book.title}'"
-	else
-		puts "\n#{update_element} does not exist in the library catalog"
+		if number_copies != 0
+			plural = "copies"
+			plural_verb = "are"
+			if number_copies == 1
+				plural = "copy"
+				plural_verb = "is"
+			end 
+			puts "There #{plural_verb} now #{number_copies} #{plural} of '#{the_book.title}'"
+		end
 	end
 end
 
 def update_book_information
-	puts "\nEnter the title or ISBN-10 number of the book of which to change information"
-	update_element = gets.chomp
-	if update_element =~ /\d\d\d\d\d\d\d\d\d\d/
-		the_book_array = Book.get_by_isbn_10(update_element)
-	else
-		the_book_array = Book.get_by_title(update_element)
-	end
-	if the_book_array.length > 0
+	the_book_array = get_book_array_by_title_or_isbn_10
+	if !the_book_array.empty?
 		the_book = the_book_array.first
+		display_author_names(the_book)
 		puts "\nUPDATE BOOK MENU for LIBRARIAN"
 		puts "Menu options:"
 		puts "  b = go back to the librarian's books menu"
@@ -412,8 +426,6 @@ def update_book_information
 		elsif option != "b"
 			puts "\nInvalid option, try again"
 		end
-	else
-		puts "\nThere are no copies of #{update_element} to update"
 	end
 end
 
@@ -451,14 +463,8 @@ def update_author_menu(the_book, author_array)
 end
 
 def delete_book
-	puts "\nEnter the title or ISBN-10 number of the book of which to change information"
-	update_element = gets.chomp
-	if update_element =~ /\d\d\d\d\d\d\d\d\d\d/
-		the_book_array = Book.get_by_isbn_10(update_element)
-	else
-		the_book_array = Book.get_by_title(update_element)
-	end
-	if the_book_array.length > 0
+	the_book_array = get_book_array_by_title_or_isbn_10
+	if !the_book_array.empty?
 		the_book = the_book_array.first
 		puts "\nThis operation cannot be undone!! Enter 'y' or 'yes' to delete"
 		puts "Enter 'x' to exit the program or 'b' to go back to the librarian's books menu"
@@ -486,14 +492,12 @@ def delete_book
 		elsif option != "b"
 			puts "Invalid option, try again"
 		end
-	else
-		puts "\n#{update_element} does not exist in the library catalog"
 	end
 end
 
 
 def patron_maint_menu
-option = nil
+option = ""
 	while option != "m" && option != "x" && option != "b"
 		puts "\nPATRON MENU for LIBRARIAN"
 		puts "Menu options:"
@@ -636,7 +640,7 @@ end
 
 
 def patron_menu
-	option = nil
+	option = ""
 	while option != "m" && option != "x"
 		puts "\nPATRON MENU\n"
 		puts "Menu options:"
@@ -703,6 +707,20 @@ def checkout_book
 end
 
 def available_copies_book
+	puts "\nCHECK THE NUMBER OF AVAILABLE COPIES OF A BOOK"
+	the_book_array = get_book_array_by_title_or_isbn_10
+	if !the_book_array.empty?
+		the_book = the_book_array.first
+		available_copies_array = Copy.get_by_book_id_not_checked_out(the_book.id)
+		number_available_copies = available_copies_array.length
+		plural = "copies"
+		plural_verb = "are"
+		if number_available_copies == 1
+			plural = "copy"
+			plural_verb = "is"
+		end 
+		puts "\nThere #{plural_verb} #{number_available_copies} #{plural} of #{the_book.title} available for checkout\n"
+	end
 end
 
 def checkout_history
