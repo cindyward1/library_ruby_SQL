@@ -6,7 +6,7 @@
 
 * Author: Cindy Ward <cindyward@yahoo.com>
 * Date created: August 16, 2014
-* Last modification date: August 16, 2014
+* Last modification date: August 21, 2014
 * Created for:  Epicodus, Summer 2014 session
 
 ##Included; written by author:
@@ -55,6 +55,7 @@ This Ruby application implements a character user interface to a library applica
 2. Search for a book by author or title to find a particular book.
 3. Enter multiple authors for a book so book catalog information is accurate.
 4. See a list of overdue books including the name and phone number of each patron who has an overdue book checked out.
+5. Check in a book (this was not specified in the original assignment)
 ###The patron is able to:
 1. Check out a book
 2. Determine how many copies of a book are available to be checked out.
