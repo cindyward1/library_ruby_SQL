@@ -87,7 +87,8 @@ class Checkout
   def self.get_overdue(today_date)
   	results = DB.exec("SELECT id, patron_id, copy_id, TO_CHAR(checkout_date, 'MM/DD/YYYY') AS checkout_date_char, " +
                       "TO_CHAR(checkin_date, 'MM/DD/YYYY') as checkin_date_char, " +
-                      "TO_CHAR(due_date, 'MM/DD/YYYY') AS due_date_char from checkout WHERE due_date < TO_DATE('#{today_date}', 'MM/DD/YYYY');")
+                      "TO_CHAR(due_date, 'MM/DD/YYYY') AS due_date_char from checkout WHERE due_date < TO_DATE('#{today_date}', 'MM/DD/YYYY') " +
+                      "ORDER by patron_id;")
 		checkouts = []
     results.each do |results|
       @id = results['id'].to_i

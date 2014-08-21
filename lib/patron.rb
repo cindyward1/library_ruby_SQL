@@ -79,11 +79,25 @@ def self.all
   end
 
   def count_checkouts
-  	return 0
+  	results = DB.exec("SELECT COUNT(id) from checkout WHERE checkin_date = TO_DATE('00/00/0000', 'MM/DD/YYYY') and patron_id = #{self.id};") 
+    counts = []
+    results.each do |results|
+      count = results['count'].to_i
+      counts << count
+    end
+    counts
   end
 
-  def count_overdue
-  	return 0
+
+  def count_overdue(today_date)
+  	results = DB.exec("SELECT COUNT(id) from checkout WHERE due_date < TO_DATE('#{today_date}', 'MM/DD/YYYY') AND " +
+                      "checkin_date = TO_DATE('00/00/0000', 'MM/DD/YYYY') and patron_id = #{self.id};") 
+    counts = []
+    results.each do |results|
+      count = results['count'].to_i
+      counts << count
+    end
+    counts
   end
 
 end

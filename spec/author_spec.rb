@@ -15,7 +15,7 @@ describe Author do
     expect(Author.all).to eq [test_author]
   end
 
-  it "is retrieved from the database" do
+  it "is retrieved from the database by its ID or its name" do
     test_author = Author.new({:name=>"Eugene ONeill", :id=>1})
     test_author.save
     test_author1 = Author.get_by_name("Eugene ONeill").first

@@ -22,7 +22,7 @@ describe Written_by do
     expect(Written_by.all).to eq [test_written_by]
   end
 
-  it "is retrieved from the database" do
+  it "is retrieved from the database by author id, book_id, or both author and book ids" do
     test_book = Book.new({:title=>"The Iceman Cometh", :isbn_10=>"0300117434", :id=>1})
     test_book.save
     test_author = Author.new({:name=>"Eugene ONeill", :id=>1})
@@ -33,6 +33,8 @@ describe Written_by do
     expect(test_written_by).to eq test_written_by1
     test_written_by2 = Written_by.get_by_book_id(test_book.id).first
     expect(test_written_by).to eq test_written_by2
+    test_written_by3 = Written_by.get_by_book_and_author_ids(test_book.id, test_author.id).first
+    expect(test_written_by).to eq test_written_by3
   end
 
 it "is deleted from the database" do

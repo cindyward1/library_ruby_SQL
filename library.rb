@@ -136,28 +136,34 @@ def checkin_book
 			if copy_checkout_hash_array.length == 1
 				copy_id = copy_checkout_hash_array.first['copy_id']
 				the_copy_array = Copy.get_by_id(copy_id)
+				the_copy = the_copy_array.first
 			elsif copy_checkout_hash_array.length > 1
 				puts "\nThe patron #{the_patron.name} has multiple copies of #{the_book.title} checked out"
 				puts "Please provide the unique copy number of the book being checked in"
 				copy_input_id = gets.chomp.to_i
 				the_copy_array = Copy.get_by_id(copy_input_id)
-				copy_id = the_copy.id
 				if the_copy_array.empty?
 					puts "\nCopy number #{copy_input_id} was not found for book #{the_book.title}"
 					copy_id = 0
+				else
+					the_copy = the_copy_array.first
+					copy_id = the_copy.id
 				end
-			elsif copy_checkout_hash_array.length = 0
-				puts "\nInternal error: checkout #{the_checkout.id} of book #{the_book.title} for patron #{the_patron.name} has no corresponding copy"
+			elsif copy_checkout_hash_array.empty?
+				puts puts "\n#{the_patron.name} does not have #{the_book.title} checked out"
 				copy_id = 0
 			end
 			if copy_id != 0
-				the_copy = the_copy_array.first
-				the_checkout = Checkout.get_by_id(the_copy.checkout_id).first
-				the_copy.check_in
-				today = Date.today
-				today_char = today.month.to_s + "/" + today.day.to_s + "/" + today.year.to_s
-				the_checkout.check_in(today_char)
-				puts "\nThe book #{the_book.title} checked out by patron #{the_patron.name} has been checked in"
+				the_checkout_array = Checkout.get_by_id(the_copy.checkout_id)
+				if the_checkout_array.empty?
+					puts "\n#{the_patron.name} does not have #{the_book.title} checked out"
+				else
+					the_checkout = the_checkout_array.first
+					the_copy.check_in
+					today_char = format_today(0)
+					the_checkout.check_in(today_char)
+					puts "\nThe book #{the_book.title} checked out by patron #{the_patron.name} has been checked in"
+				end
 			end
 		end
 	end
@@ -175,6 +181,12 @@ def get_book_array_by_title_or_isbn_10
 		puts "\nThere is no book in the catalog with the information #{input_info}"
 	end
 	the_book_array
+end
+
+def format_today(number_days)
+	today = Date.today + number_days
+	today_char = today.month.to_s + "/" + today.day.to_s + "/" + today.year.to_s
+	today_char
 end
 
 def add_book_to_catalog
@@ -542,10 +554,8 @@ option = ""
 			update_patron_phone_number
 		elsif option == "d"
 			delete_patron
-		elsif option == "p"
-			find_patron_overdue_books
 		elsif option == "o"
-			find_all_patrons_overdue_books
+			find_all_overdue_books
 		elsif option == "x"
 			exit_program
 		elsif option != "b"
@@ -605,93 +615,116 @@ def find_patron_by_phone_number
 end
 
 def list_all_patrons
+
 	puts "\nCindy's Library Patron Database\n\n"
 	the_database = Patron.all
 	if the_database.empty?
 		puts "There are no patrons in the database"
 	else
+		today_char = format_today(0)
 		the_database.each_with_index do |the_patron, index|
-			number_checkouts = the_patron.count_checkouts
-			number_overdue = the_patron.count_overdue
+			the_checkout_array = the_patron.count_checkouts
+			if the_checkout_array.empty?
+				number_checkouts = 0
+			else
+				number_checkouts = the_patron.count_checkouts.first
+			end
+			the_overdue_array = the_patron.count_overdue(today_char)
+			if the_overdue_array.empty?
+				number_overdue = 0
+			else
+				number_overdue = the_patron.count_overdue(today_char).first
+			end
 			puts "#{index+1}. #{the_patron.name} (phone number #{the_patron.phone_number})"
 			puts "            Number of books currently checked out: #{number_checkouts}"
 			puts "            Number of books overdue: #{number_overdue}\n"
 		end
 	end
-	puts "\n"
+puts "\n"
 end
 
 def update_patron_name
 	the_patron_array = find_patron_by_name
-	the_patron = the_patron_array.first
-	puts "\nEnter the new name for #{the_patron.name} (phone number #{the_patron.phone_number})"
-	new_name = gets.chomp
-	the_patron.update_name(new_name)
-	puts "\nThe patron's name has been changed to #{new_name}"
+	if !the_patron_array.empty?
+		the_patron = the_patron_array.first
+		puts "\nEnter the new name for #{the_patron.name} (phone number #{the_patron.phone_number})"
+		new_name = gets.chomp
+		the_patron.update_name(new_name)
+		puts "\nThe patron's name has been changed to #{new_name}"
+	end
 end
 
 def update_patron_phone_number
 	the_patron_array = find_patron_by_phone_number
-	puts "\nSelect the index of the patron's phone number to change"
-	the_patron_index = gets.chomp.to_i
-	if the_patron_index <= 0 || the_patron_index > the_patron_array.length
-		puts "\nInvalid index, try again"
-	else
-		the_patron = the_patron_array[the_patron_index-1]
-		puts "\nEnter the new phone number for the patron"
-		new_phone = gets.chomp
-		if new_phone !~ /\d\d\d-\d\d\d-\d\d\d\d/
-			puts "\nInvalid format for phone number, try again"
+	if !the_patron_array.empty?
+		puts "\nSelect the index of the patron's phone number to change"
+		the_patron_index = gets.chomp.to_i
+		if the_patron_index <= 0 || the_patron_index > the_patron_array.length
+			puts "\nInvalid index, try again"
 		else
-			the_patron.update_phone_number(new_phone)		
-			puts "\nThe phone number of patron #{the_patron.name} has been changed to #{new_phone}"
+			the_patron = the_patron_array[the_patron_index-1]
+			puts "\nEnter the new phone number for the patron"
+			new_phone = gets.chomp
+			if new_phone !~ /\d\d\d-\d\d\d-\d\d\d\d/
+				puts "\nInvalid format for phone number, try again"
+			else
+				the_patron.update_phone_number(new_phone)		
+				puts "\nThe phone number of patron #{the_patron.name} has been changed to #{new_phone}"
+			end
 		end
 	end
 end
 
 def delete_patron
 	the_patron_array = find_patron_by_name
-	the_patron = the_patron_array.first
-	puts "\nPatron #{the_patron.name} and all of their checkout history will be deleted"
-	puts "\nThis operation cannot be undone!! Enter 'y' or 'yes' to delete"
-	puts "Enter 'x' to exit the program or 'p' to go back to the librarian's patron menu"
-	option = gets.chomp.slice(0,1).downcase
-	if option == "y"
-		checkout_array = Checkout.get_by_patron_id(the_patron.id)
-		has_checkouts = false
-		checkout_array.each do |checkout|
-			if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
-				has_checkouts = true
-			end
-		end
-		if has_checkouts
-			puts "Patron #{the_patron.name} currently has books checked out and cannot be deleted"
-		else
+	if !the_patron_array.empty?
+		the_patron = the_patron_array.first
+		puts "\nPatron #{the_patron.name} and all of their checkout history will be deleted"
+		puts "\nThis operation cannot be undone!! Enter 'y' or 'yes' to delete"
+		puts "Enter 'x' to exit the program or 'p' to go back to the librarian's patron menu"
+		option = gets.chomp.slice(0,1).downcase
+		if option == "y"
+			checkout_array = Checkout.get_by_patron_id(the_patron.id)
+			has_checkouts = false
 			checkout_array.each do |checkout|
-				checkout.delete
+				if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
+					has_checkouts = true
+				end
 			end
-			puts "\nPatron #{the_patron.name} has been deleted"
-			the_patron.delete
+			if has_checkouts
+				puts "Patron #{the_patron.name} currently has books checked out and cannot be deleted"
+			else
+				checkout_array.each do |checkout|
+					checkout.delete
+				end
+				puts "\nPatron #{the_patron.name} has been deleted"
+				the_patron.delete
+			end
+		elsif option == "x"
+			exit_program
+		elsif option != "p"
+			puts "Invalid option, try again"
 		end
-	elsif option == "x"
-		exit_program
-	elsif option != "p"
-		puts "Invalid option, try again"
 	end
 end
 
-def find_patron_overdue_books
-end
-
-def find_all_patrons_overdue_books
-	# today_date = "10/31/2014"
-	# puts "\nThe list of Cindy's Library patrons with overdue books as of #{today_date}\n"
-	# naughty_patron_array = Checkout.get_overdue(today_date)
-	# naughty_patron_array.each do |checkout|
-	# 	if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
-	# 		puts "#{checkout.patron_id} #{checkout.due_date} #{checkout.checkout_date}"
-	# 	end
-	# end
+def find_all_overdue_books
+	puts "\nFIND ALL OVERDUE BOOKS"
+	today_date = format_today(0)
+	puts "\nThe list of Cindy's Library's overdue books as of #{today_date}\n\n"
+	overdue_book_array = Checkout.get_overdue(today_date)
+	if overdue_book_array.empty?
+		puts "There are no overdue books"
+	else
+		overdue_book_array.each do |checkout|
+			if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
+				the_patron = Patron.get_by_id(checkout.patron_id).first
+				the_book = Book.get_from_checkout(checkout.id).first
+				puts "#{the_book.title}: Due back on #{checkout.due_date}"
+				puts "      Checked out by #{the_patron.name} (phone #{the_patron.phone_number}) on #{checkout.checkout_date}"
+			end
+		end
+	end
 end
 
 
@@ -745,10 +778,8 @@ def checkout_book
 		the_copy_array = Copy.get_by_book_id_not_checked_out(the_book.id)
 		if !the_copy_array.empty?
 			the_copy = the_copy_array.first
-			today = Date.today
-			checkout_date_formatted = today.month.to_s + "/" + today.day.to_s + "/" + today.year.to_s
-			due_date = today + 30
-			due_date_formatted = due_date.month.to_s + "/" + due_date.day.to_s + "/" + due_date.year.to_s
+			checkout_date_formatted = format_today(0)
+			due_date_formatted = format_today(30)
 			checkin_date = "00/00/0000"
 			the_checkout = Checkout.new({:patron_id=>@current_patron.id, :copy_id=>the_copy.id, :checkout_date=>checkout_date_formatted, 
 																	 :due_date=>due_date_formatted, :checkin_date=>checkin_date})
@@ -770,33 +801,41 @@ def available_copies_book
 	if !the_book_array.empty?
 		the_book = the_book_array.first
 		available_copies_array = Copy.get_by_book_id_not_checked_out(the_book.id)
-		number_available_copies = available_copies_array.length
-		plural = "copies"
-		plural_verb = "are"
-		if number_available_copies == 1
-			plural = "copy"
-			plural_verb = "is"
-		end 
-		puts "\n#{@current_patron.name}, there #{plural_verb} #{number_available_copies} #{plural} of #{the_book.title} available for checkout\n"
+		if available_copies_array.empty?
+			puts "\n#{@current_patron.name}, there are no available copies of #{the_book.title}"
+		else
+			number_available_copies = available_copies_array.length
+			plural = "copies"
+			plural_verb = "are"
+			if number_available_copies == 1
+				plural = "copy"
+				plural_verb = "is"
+			end 
+			puts "\n#{@current_patron.name}, there #{plural_verb} #{number_available_copies} #{plural} of #{the_book.title} available for checkout\n"
+		end
 	end
 end
 
 def checkout_history
 	puts "\nCHECKOUT HISTORY FOR #{@current_patron.name}\n\n"
 	checked_out_array = Checkout.get_by_patron_id(@current_patron.id)
-	checked_out_array.each_with_index do |checkout, index|
-		the_book = Book.get_from_checkout(checkout.id).first
-		if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
-			checkout_string = "Checked out"
-			due_date_string = "Due date: #{checkout.due_date}"
-		else
-			checkout_string = checkout.checkin_date + " "
-			due_date_string = ""
+	if checked_out_array.empty?
+		puts "\n#{@current_patron.name} currently has no books checked out\n"
+	else
+		checked_out_array.each_with_index do |checkout, index|
+			the_book = Book.get_from_checkout(checkout.id).first
+			if checkout.checkin_date == "00/00/0000" || checkout.checkin_date == "01/01/0001"
+				checkout_string = "Checked out"
+				due_date_string = "Due date: #{checkout.due_date}"
+			else
+				checkout_string = checkout.checkin_date + " "
+				due_date_string = ""
+			end
+			puts "#{index+1}. #{the_book.title} (ISBN-10 #{the_book.isbn_10})"
+			puts "   Checked in on: #{checkout_string}   Checked out on: #{checkout.checkout_date}   #{due_date_string}\n\n"
 		end
-		puts "#{index+1}. #{the_book.title} (ISBN-10 #{the_book.isbn_10})"
-		puts "   Checked in on: #{checkout_string}   Checked out on: #{checkout.checkout_date}   #{due_date_string}\n\n"
+		puts "\n"
 	end
-	puts "\n"
 end
 
 def check_due_date_book
@@ -805,18 +844,22 @@ def check_due_date_book
 	if !the_book_array.empty?
 		the_book = the_book_array.first
 		copy_checkout_hash_array = the_book.find_copy_checkout_from_patron_book(@current_patron.id)
-		copy_checkout_hash_array.each do |copy_checkout|
-			checkout_id = copy_checkout['checkout_id']
-			the_checkout_array = Checkout.get_by_id(checkout_id)
-			if !the_checkout_array.empty?
-				the_checkout = the_checkout_array.first
-				if the_checkout.checkin_date == "00/00/0000" || the_checkout.checkin_date == "01/01/0001"
-					puts "\n#{@current_patron.name}, #{the_book.title} is due on #{the_checkout.due_date}"
+		if copy_checkout_hash_array.empty?
+			puts "\n#{@current_patron.name}, you do not have #{the_book.title} checked out"
+		else
+			copy_checkout_hash_array.each do |copy_checkout|
+				checkout_id = copy_checkout['checkout_id']
+				the_checkout_array = Checkout.get_by_id(checkout_id)
+				if !the_checkout_array.empty?
+					the_checkout = the_checkout_array.first
+					if the_checkout.checkin_date == "00/00/0000" || the_checkout.checkin_date == "01/01/0001"
+						puts "\n#{@current_patron.name}, #{the_book.title} is due on #{the_checkout.due_date}"
+					else
+						puts "\n#{@current_patron.name}, you do not have #{the_book.title} currently checked out"
+					end
 				else
-					puts "\n#{@current_patron.name}, you do not have #{the_book.title} currently checked out"
+					puts "\n#{@current_patron.name}, you do not have #{the_book.title} checked out"
 				end
-			else
-				puts "\n#{@current_patron.name}, you do not have #{the_book.title} currently checked out"
 			end
 		end
 	end
